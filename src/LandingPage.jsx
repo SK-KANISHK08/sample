@@ -1,152 +1,180 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Mic, Globe, FolderOpen, Play, CheckCircle, ChevronRight, Volume2 } from 'lucide-react';
+import { 
+  Upload, FileText, Mic, Play, ChevronRight, 
+  Download, CheckCircle, ArrowLeft, Home, 
+  Settings, User, Globe, Printer, PlayCircle 
+} from 'lucide-react';
 import './LandingPage.css';
 
-const LandingPage = () => {
-  // Navigation State: 'language' or 'upload'
-  const [currentPage, setCurrentPage] = useState('language');
-  const [selectedLang, setSelectedLang] = useState('English');
-  
-  // Processing States
-  const [isProcessing, setIsProcessing] = useState(false);
+export default function App() {
+  const [step, setStep] = useState(1);
+  const [lang, setLang] = useState('Tamil');
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("Ready");
-  const fileInputRef = useRef(null);
+  const fileRef = useRef(null);
 
-  const speak = (text, langCode) => {
+  // Core Logic Handlers
+  const handleProcess = () => {
+    let val = 0;
+    const interval = setInterval(() => {
+      val += 1;
+      setProgress(val);
+      if (val >= 67) { // Matches your specific design requirements
+        clearInterval(interval);
+        setTimeout(() => setStep(4), 1000);
+      }
+    }, 50);
+  };
+
+  const speak = (text) => {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = langCode || (selectedLang === 'Tamil' ? 'ta-IN' : selectedLang === 'Hindi' ? 'hi-IN' : 'en-US');
+    msg.lang = lang === 'Tamil' ? 'ta-IN' : 'en-US';
     window.speechSynthesis.speak(msg);
   };
 
-  const handleProcess = () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    setProgress(0);
-    setStatus("Reading PDF...");
-    speak("Processing your document. Please stay on this page.");
-
-    let interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsProcessing(false);
-          setStatus("Task Completed!");
-          speak("Document processed successfully. Check your tasks below.");
-          return 100;
-        }
-        if (prev === 40) setStatus("Translating to " + selectedLang + "...");
-        return prev + 5;
-      });
-    }, 150);
-  };
-
-  // --- PAGE 1: LANGUAGE SELECTION ---
-  const LanguageSelection = () => (
-    <div className="action-section">
-      <div className="upload-card">
-        <h3 className="center-text">Choose Your Language</h3>
-        <p className="center-text subtitle">Select to hear a greeting</p>
-        
-        <div className="lang-grid-display">
-          {[
-            { name: 'Tamil', native: 'தமிழ்', img: 'https://flagpedia.net/data/flags/h80/in.png', greet: 'வணக்கம்', code: 'ta-IN' },
-            { name: 'English', native: 'English', img: 'https://flagpedia.net/data/flags/h80/us.png', greet: 'Hello', code: 'en-US' },
-            { name: 'Hindi', native: 'हिन्दी', img: 'https://flagpedia.net/data/flags/h80/in.png', greet: 'नमस्ते', code: 'hi-IN' }
-          ].map((lang) => (
-            <div 
-              key={lang.name}
-              className={`lang-card-item ${selectedLang === lang.name ? 'active' : ''}`}
-              onClick={() => {
-                setSelectedLang(lang.name);
-                speak(lang.greet, lang.code);
-              }}
-            >
-              <img src={lang.img} alt={lang.name} className="flag-img" />
-              <h4>{lang.native}</h4>
-              <p>{lang.name}</p>
-            </div>
-          ))}
-        </div>
-
-        <button className="btn-process" onClick={() => setCurrentPage('upload')}>
-          Next Step <ChevronRight size={20} />
-        </button>
-      </div>
-    </div>
-  );
-
-  // --- PAGE 2: DOCUMENT UPLOAD ---
-  const DocumentUpload = () => (
-    <div className="action-section">
-      <div className="upload-card">
-        <div className="card-header">
-            <button className="btn-back" onClick={() => setCurrentPage('language')}>← Back</button>
-            <h3>{status}</h3>
-        </div>
-        
-        <div className="file-selector" onClick={() => fileInputRef.current.click()}>
-          <div className="select-box">
-            <Upload size={20} color="#007bff" />
-            <span>Click to Select PDF</span>
-          </div>
-        </div>
-
-        <div className="doc-type-grid">
-            <div className="type-column">
-              <label>Document Type</label>
-              <div className="type-card selected"><FileText size={18} /> Pension</div>
-            </div>
-            <div className="icon-features">
-               <div className="feat-item"><div className="icon-bg yellow">📄</div><span>Ration</span></div>
-               <div className="feat-item"><div className="icon-bg green">🏥</div><span>Health</span></div>
-            </div>
-        </div>
-
-        <button className={`btn-process ${isProcessing ? 'loading' : ''}`} onClick={handleProcess} disabled={isProcessing}>
-          <Mic size={20} /> {isProcessing ? "Processing..." : "Process Document"}
-        </button>
-
-        <div className="progress-area">
-          <div className="progress-bar">
-            <div className="progress-fill" style={{width: `${progress}%`}}></div>
-          </div>
-          <div className="progress-status">
-            <button className="btn-listen" onClick={() => speak("Please upload your document to begin.")}>
-                <Play size={16} /> Listen!
-            </button>
-            <span>{progress}%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="bureau-container">
-      {/* Left side remains the same for both pages */}
-      <div className="hero-section">
-        <div className="logo-area">
-          <div className="logo-icon">📄</div>
-          <div>
-            <h1>BureauClear AI</h1>
-            <p className="subtitle">Your Bureaucracy Translator</p>
-          </div>
+      {/* Left Sidebar - Consistent across laptop/desktop view */}
+      <div className="hero-side">
+        <div className="logo-box">
+          <div className="logo-icon"><FileText size={24} /></div>
+          <div><h1>BureauClear AI</h1><p>Your Bureaucracy Translator</p></div>
         </div>
-        <div className="hero-content">
-          <h2>Simplifying Government Documents</h2>
-          <p>We convert complex paperwork into easy steps with voice guidance in <b>{selectedLang}</b>.</p>
+        <div className="hero-main-content">
+          <h2>Simplifying Government Documents, Step-by-Step</h2>
+          <p>We convert complex PDFs into easy steps with voice guidance in your language.</p>
         </div>
-        <div className="footer-tag">AI for Citizens - Easy, Accessible, Helpful</div>
+        <div className="footer-label">AI for Citizens - Easy, Accessible, Helpful</div>
       </div>
 
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={() => speak("File ready")} />
-      
-      {/* Right side switches based on state */}
-      {currentPage === 'language' ? <LanguageSelection /> : <DocumentUpload />}
+      {/* Right Action Side - Dynamic Page Switcher */}
+      <div className="action-side">
+        <nav className="top-nav">
+          <div className="nav-links"><span>Home</span><span>Pricing</span><span>Applets</span></div>
+          <button className="btn-login" onClick={() => setStep(6)}>Log IN</button>
+        </nav>
+
+        <div className="content-viewport">
+          {/* PAGE 1: INITIAL LANDING */}
+          {step === 1 && (
+            <div className="card-ui animate-fade">
+              <div className="hero-illustration">
+                <img src="https://img.freepik.com/free-vector/legal-advisers-concept-illustration_114360-20703.jpg" alt="hero" />
+              </div>
+              <div className="btn-group">
+                <button className="btn-primary" onClick={() => setStep(2)}><Upload size={18}/> Upload Document</button>
+                <button className="btn-outline" onClick={() => speak("Demo loading")}>Try Demo Document</button>
+              </div>
+              <div className="lang-preview">🇮🇳 Tamil | English | Hindi | Local Dialect</div>
+            </div>
+          )}
+
+          {/* PAGE 2: LANGUAGE SELECTION */}
+          {step === 2 && (
+            <div className="card-ui animate-fade">
+              <button className="back-link" onClick={() => setStep(1)}><ArrowLeft size={16}/> Back</button>
+              <h3>Select Language Output</h3>
+              <div className="grid-3">
+                {['Tamil', 'English', 'Hindi'].map(l => (
+                  <div key={l} className={`option-item ${lang === l ? 'active' : ''}`} onClick={() => setLang(l)}>
+                    <div className="icon-circle"><Globe size={20}/></div>
+                    <p>{l}</p>
+                  </div>
+                ))}
+              </div>
+              <button className="btn-primary w-100 mt-20" onClick={() => setStep(3)}>Next Step <ChevronRight size={18}/></button>
+            </div>
+          )}
+
+          {/* PAGE 4: PROCESSING & UPLOAD */}
+          {step === 3 && (
+            <div className="card-ui animate-fade">
+              <h3>Upload Document (PDF/DOC)</h3>
+              <div className="drop-zone" onClick={() => fileRef.current.click()}>
+                <Upload size={40} color="#0056b3"/>
+                <p>Choose File</p>
+                <input type="file" ref={fileRef} hidden />
+              </div>
+              <div className="info-row">
+                <div className="lang-tag">🇮🇳 {lang} Local Dialect</div>
+                <div className="icon-row"><span>📄 Pension</span><span>🏥 Health</span></div>
+              </div>
+              <button className="btn-primary w-100" onClick={handleProcess} disabled={progress > 0}>
+                <Mic size={18}/> {progress > 0 ? 'Analyzing...' : 'Process Document'}
+              </button>
+              <div className="progress-bar"><div className="fill" style={{width: `${progress}%`}}></div></div>
+              <p className="center-text">{progress}% Completed</p>
+            </div>
+          )}
+
+          {/* PAGE 4: SIMPLIFIED STEPS (Matches Image 3/4) */}
+          {step === 4 && (
+            <div className="card-ui animate-fade wide-card">
+              <div className="flex-between">
+                <h3>Pension Scheme Application</h3>
+                <span className="badge">Simplified Steps</span>
+              </div>
+              <div className="step-list">
+                <div className="step-card" onClick={() => speak("Bring Aadhaar Card and Ration Card")}>
+                  <div className="step-num">1</div>
+                  <p>Bring Aadhaar Card & Ration Card</p>
+                  <ChevronRight size={16}/>
+                </div>
+                <div className="step-card">
+                  <div className="step-num">2</div>
+                  <p>Go to the Taluk Office</p>
+                  <ChevronRight size={16}/>
+                </div>
+                <div className="step-card">
+                  <div className="step-num">3</div>
+                  <p>Submit Form at Counter 3</p>
+                  <ChevronRight size={16}/>
+                </div>
+              </div>
+              <button className="btn-primary w-100 mt-20" onClick={() => setStep(5)}>View Voice Guide</button>
+            </div>
+          )}
+
+          {/* PAGE 5: VOICE GUIDE & PRINTING */}
+          {step === 5 && (
+            <div className="card-ui animate-fade">
+              <h3><Mic size={20}/> Play Voice Guide</h3>
+              <button className="btn-voice-large" onClick={() => speak("Your application requires 3 documents. Fee is zero.")}>
+                <PlayCircle size={40}/>
+                <span>Play Voice Guide</span>
+              </button>
+              <div className="details-grid">
+                <div className="detail-item"><span>Time</span><p>13 Days</p></div>
+                <div className="detail-item"><span>Fees</span><p>No Fees</p></div>
+              </div>
+              <div className="btn-group-vert">
+                <button className="btn-outline w-100"><Download size={18}/> Download Guide</button>
+                <button className="btn-primary w-100"><Printer size={18}/> Print Storyboard</button>
+              </div>
+            </div>
+          )}
+
+          {/* PAGE 6: ADMIN DASHBOARD */}
+          {step === 6 && (
+            <div className="card-ui animate-fade">
+              <div className="dashboard-header">
+                <h3>Amim Dashboard</h3>
+                <Home size={18} className="clickable" onClick={() => setStep(1)}/>
+              </div>
+              <div className="stats-container">
+                <div className="stat-box"><h4>525</h4><p>Translated</p></div>
+                <div className="stat-box"><h4>1,200+</h4><p>Users</p></div>
+              </div>
+              <div className="recent-list">
+                <label>Recent Document Types</label>
+                <div className="list-item"><span>Pension</span><span>280</span></div>
+                <div className="list-item"><span>Ration Card</span><span>105</span></div>
+              </div>
+              <button className="btn-outline w-100 mt-20" onClick={() => setStep(1)}>Start New Session</button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
-};
-
-export default LandingPage;
+}
