@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Card, Radio, Typography, Space, Layout, Upload, ConfigProvider, List, Tag } from 'antd';
+import { Button, Card, Radio, Typography, Space, Layout, Upload, ConfigProvider, List, Tag, message } from 'antd';
 import { 
   ArrowRightOutlined, ArrowLeftOutlined, AudioOutlined, 
   EyeInvisibleOutlined, TranslationOutlined, RobotOutlined, 
@@ -14,6 +14,8 @@ const App = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [language, setLanguage] = useState('en');
   const [userType, setUserType] = useState(null);
+  const [aiResult, setAiResult] = useState(null); // State to store AI summary
+  const [loading, setLoading] = useState(false);
 
   const translations = {
     en: { 
@@ -27,7 +29,8 @@ const App = () => {
         formListTitle: "Select a Form to Fill",
         forms: ["Aadhar Card Application", "PAN Card Request", "Voter ID Registration", "Ration Card Update", "Income Certificate"],
         uploadTitle: "Upload Document", uploadHint: "Drag your Government PDF here",
-        active: "Desktop Accessibility: ON"
+        active: "Desktop Accessibility: ON",
+        processing: "AI is analyzing your document..."
     },
     ta: { 
         next: "அடுத்து", back: "பின்னால்", start: "தொடங்கவும்", 
@@ -40,7 +43,8 @@ const App = () => {
         formListTitle: "நிரப்ப வேண்டிய படிவத்தைத் தேர்ந்தெடுக்கவும்",
         forms: ["ஆதார் கார்டு விண்ணப்பம்", "பான் கார்டு கோரிக்கை", "வாக்காளர் அடையாள அட்டை", "ரேஷன் கார்டு புதுப்பிப்பு", "வருமான சான்றிதழ்"],
         uploadTitle: "ஆவணத்தைப் பதிவேற்றவும்", uploadHint: "உங்கள் அரசு PDF-ஐ இங்கே இழுக்கவும்",
-        active: "டெஸ்க்டாப் அணுகல்தன்மை: உள்ளது"
+        active: "டெஸ்க்டாப் அணுகல்தன்மை: உள்ளது",
+        processing: "AI உங்கள் ஆவணத்தை பகுப்பாய்வு செய்கிறது..."
     },
     hi: { 
         next: "अगला", back: "पीछे", start: "शुरू करें", 
@@ -53,13 +57,13 @@ const App = () => {
         formListTitle: "भरने के लिए एक फॉर्म चुनें",
         forms: ["आधार कार्ड आवेदन", "पैन कार्ड अनुरोध", "मतदाता पहचान पत्र पंजीकरण", "राशन कार्ड अपडेट", "आय प्रमाण पत्र"],
         uploadTitle: "दस्तावेज़ अपलोड करें", uploadHint: "अपना सरकारी PDF यहाँ खींचें",
-        active: "डेस्कटॉप एक्सेसिबिलिटी: चालू"
+        active: "डेस्कटॉप एक्सेसिबिलिटी: चालू",
+        processing: "AI आपके दस्तावेज़ का विश्लेषण कर रहा है..."
     }
   };
 
   const t = translations[language];
 
-  // --- Styled Components (Glassmorphism) ---
   const mainWrapperStyle = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
@@ -78,8 +82,6 @@ const App = () => {
     margin: 'auto'
   };
 
-  // --- Page Renderers ---
-
   const Page1Landing = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '50px' }}>
       <div style={{ flex: 1 }}>
@@ -90,17 +92,8 @@ const App = () => {
         </Text>
       </div>
       <div style={{ flex: 1, textAlign: 'right' }}>
-  <img 
-    src="https://illustrations.popsy.co/blue/manager.svg" 
-    alt="Bureaucracy AI Manager Illustration" 
-    style={{ 
-      width: '100%', 
-      maxWidth: '500px', 
-      height: 'auto',
-      filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' 
-    }} 
-  />
-</div>
+        <img src="https://illustrations.popsy.co/blue/manager.svg" alt="Manager" style={{ width: '100%', maxWidth: '500px', height: 'auto', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' }} />
+      </div>
     </div>
   );
 
@@ -129,15 +122,7 @@ const App = () => {
           { id: 'deaf', icon: <EyeInvisibleOutlined />, title: t.opt3, desc: t.opt3Desc, color: '#f5222d' },
           { id: 'fill', icon: <FormOutlined />, title: t.opt4, desc: t.opt4Desc, color: '#722ed1' }
         ].map(item => (
-          <Card 
-            key={item.id} hoverable 
-            onClick={() => setUserType(item.id)}
-            style={{ 
-                borderRadius: '20px', 
-                border: userType === item.id ? `3px solid ${item.color}` : '1px solid #f0f0f0',
-                background: userType === item.id ? `${item.color}05` : '#fff'
-            }}
-          >
+          <Card key={item.id} hoverable onClick={() => setUserType(item.id)} style={{ borderRadius: '20px', border: userType === item.id ? `3px solid ${item.color}` : '1px solid #f0f0f0', background: userType === item.id ? `${item.color}05` : '#fff' }}>
             <div style={{ fontSize: '40px', color: item.color }}>{item.icon}</div>
             <Title level={4}>{item.title}</Title>
             <Text type="secondary">{item.desc}</Text>
@@ -152,25 +137,45 @@ const App = () => {
       {userType === 'fill' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Title level={3}><FormOutlined /> {t.formListTitle}</Title>
-          <List
-            bordered
-            dataSource={t.forms}
-            renderItem={item => (
-              <List.Item style={{ background: '#fff', marginBottom: '10px', borderRadius: '10px', cursor: 'pointer' }} className="form-item-hover">
-                <Space><FileTextOutlined style={{ color: '#1890ff' }} /> <Text strong>{item}</Text></Space>
-                <Button type="link">Fill Now</Button>
-              </List.Item>
-            )}
-            style={{ marginTop: '20px', maxHeight: '400px', overflowY: 'auto' }}
-          />
+          <List bordered dataSource={t.forms} renderItem={item => (
+            <List.Item style={{ background: '#fff', marginBottom: '10px', borderRadius: '10px', cursor: 'pointer' }}>
+              <Space><FileTextOutlined style={{ color: '#1890ff' }} /> <Text strong>{item}</Text></Space>
+              <Button type="link">Fill Now</Button>
+            </List.Item>
+          )} style={{ marginTop: '20px', maxHeight: '300px', overflowY: 'auto' }} />
         </motion.div>
       ) : (
         <>
           <Title level={2}>{t.uploadTitle}</Title>
-          <Upload.Dragger style={{ background: '#fff', borderRadius: '20px', padding: '60px' }}>
-            <p className="ant-upload-drag-icon"><InboxOutlined style={{ fontSize: '64px' }} /></p>
+          <Upload.Dragger 
+            name="file"
+            multiple={false}
+            action={`http://localhost:5000/upload?lang=${language}`}
+            onChange={(info) => {
+              if (info.file.status === 'uploading') {
+                setLoading(true);
+              }
+              if (info.file.status === 'done') {
+                setLoading(false);
+                message.success(`${info.file.name} processed successfully.`);
+                setAiResult(info.file.response.result); // Save result from backend
+              } else if (info.file.status === 'error') {
+                setLoading(false);
+                message.error(`${info.file.name} processing failed.`);
+              }
+            }}
+            style={{ background: '#fff', borderRadius: '20px', padding: '40px' }}
+          >
+            <p className="ant-upload-drag-icon"><InboxOutlined style={{ fontSize: '64px', color: '#1890ff' }} /></p>
             <Title level={4}>{t.uploadHint}</Title>
           </Upload.Dragger>
+
+          {aiResult && (
+            <Card style={{ marginTop: '20px', textAlign: 'left', borderRadius: '15px', background: '#f9f9f9' }}>
+              <Title level={4}><RobotOutlined /> AI Summary:</Title>
+              <Text style={{ whiteSpace: 'pre-line' }}>{aiResult}</Text>
+            </Card>
+          )}
         </>
       )}
     </div>
@@ -198,11 +203,11 @@ const App = () => {
             </AnimatePresence>
 
             <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-between' }}>
-              <Button size="large" shape="round" icon={<ArrowLeftOutlined />} onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} style={{ width: '180px', height: '50px' }}>
+              <Button size="large" shape="round" icon={<ArrowLeftOutlined />} onClick={() => { setCurrentStep(prev => prev - 1); setAiResult(null); }} disabled={currentStep === 0} style={{ width: '180px', height: '50px' }}>
                 {t.back}
               </Button>
-              <Button size="large" type="primary" shape="round" onClick={() => setCurrentStep(prev => prev + 1)} disabled={currentStep === pages.length - 1} style={{ width: '180px', height: '50px' }}>
-                {currentStep === 0 ? "Get Started" : t.next} <ArrowRightOutlined />
+              <Button size="large" type="primary" shape="round" onClick={() => setCurrentStep(prev => prev + 1)} disabled={currentStep === pages.length - 1 || loading} style={{ width: '180px', height: '50px' }}>
+                {loading ? "Processing..." : (currentStep === 0 ? "Get Started" : t.next)} <ArrowRightOutlined />
               </Button>
             </div>
           </motion.div>
