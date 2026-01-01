@@ -14,96 +14,84 @@ const App = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [language, setLanguage] = useState('en');
   const [userType, setUserType] = useState(null);
-  const [aiResult, setAiResult] = useState(null); // State to store AI summary
+  const [aiResult, setAiResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedForm, setSelectedForm] = useState(null);
+
+  const guideData = {
+    en: {
+      "Aadhar Card Application": { vid: "https://www.youtube.com/embed/S2pEUPB9D-o", img: "https://images.sampleforms.com/wp-content/uploads/2017/03/Aadhar-Card-Application-Form.jpg" },
+      "PAN Card Request": { vid: "https://www.youtube.com/embed/69C44H6M9Fw", img: "https://www.pdffiller.com/preview/100/381/100381667.png" },
+      "Voter ID Registration": { vid: "https://www.youtube.com/embed/dQw4w9WgXcQ", img: "https://via.placeholder.com/400x500?text=Voter+ID+Sample+EN" }
+    },
+    ta: {
+      "ஆதார் கார்டு விண்ணப்பம்": { vid: "https://www.youtube.com/embed/E-6R87m_M-I", img: "https://via.placeholder.com/400x500?text=Tamil+Aadhar+Sample" },
+      "பான் கார்டு கோரிக்கை": { vid: "https://www.youtube.com/embed/8-9-oF-m69M", img: "https://via.placeholder.com/400x500?text=Tamil+PAN+Sample" },
+      "வாக்காளர் அடையாள அட்டை": { vid: "https://www.youtube.com/embed/dQw4w9WgXcQ", img: "https://via.placeholder.com/400x500?text=Voter+ID+Tamil" }
+    },
+    hi: {
+      "आधार कार्ड आवेदन": { vid: "https://www.youtube.com/embed/RkS_jXl0AQU", img: "https://via.placeholder.com/400x500?text=Hindi+Aadhar+Sample" },
+      "पैन कार्ड अनुरोध": { vid: "https://www.youtube.com/embed/m7W6-p9XW1A", img: "https://via.placeholder.com/400x500?text=Hindi+PAN+Sample" },
+      "मतदाता पहचान पत्र पंजीकरण": { vid: "https://www.youtube.com/embed/dQw4w9WgXcQ", img: "https://via.placeholder.com/400x500?text=Voter+ID+Hindi" }
+    }
+  };
 
   const translations = {
-    en: { 
-        next: "Next", back: "Back", start: "Get Started", 
-        selectLang: "Select Your Language", 
-        question: "How can we assist you today?",
-        opt1: "Simple Summary", opt1Desc: "Reduce 20 pages to 1 easy page.",
-        opt2: "Voice Assistant", opt2Desc: "Listen to the document audio.",
-        opt3: "Visual Storyboard", opt3Desc: "Step-by-step images of actions.",
-        opt4: "Fill Up Form", opt4Desc: "AI helps you fill government forms.",
-        formListTitle: "Select a Form to Fill",
-        forms: ["Aadhar Card Application", "PAN Card Request", "Voter ID Registration", "Ration Card Update", "Income Certificate"],
-        uploadTitle: "Upload Document", uploadHint: "Drag your Government PDF here",
-        active: "Desktop Accessibility: ON",
-        processing: "AI is analyzing your document..."
-    },
-    ta: { 
-        next: "அடுத்து", back: "பின்னால்", start: "தொடங்கவும்", 
-        selectLang: "உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்", 
-        question: "இன்று நாங்கள் உங்களுக்கு எப்படி உதவலாம்?",
-        opt1: "எளிய சுருக்கம்", opt1Desc: "20 பக்கங்களை 1 எளிய பக்கமாகக் குறைக்கவும்.",
-        opt2: "குரல் உதவியாளர்", opt2Desc: "ஆவணத்தின் ஆடியோவைக் கேளுங்கள்.",
-        opt3: "காட்சி கதைப்பலகை", opt3Desc: "செயல்களின் படிப்படியான படங்கள்.",
-        opt4: "படிவம் நிரப்பவும்", opt4Desc: "அரசு படிவங்களை நிரப்ப AI உதவும்.",
-        formListTitle: "நிரப்ப வேண்டிய படிவத்தைத் தேர்ந்தெடுக்கவும்",
-        forms: ["ஆதார் கார்டு விண்ணப்பம்", "பான் கார்டு கோரிக்கை", "வாக்காளர் அடையாள அட்டை", "ரேஷன் கார்டு புதுப்பிப்பு", "வருமான சான்றிதழ்"],
-        uploadTitle: "ஆவணத்தைப் பதிவேற்றவும்", uploadHint: "உங்கள் அரசு PDF-ஐ இங்கே இழுக்கவும்",
-        active: "டெஸ்க்டாப் அணுகல்தன்மை: உள்ளது",
-        processing: "AI உங்கள் ஆவணத்தை பகுப்பாய்வு செய்கிறது..."
-    },
-    hi: { 
-        next: "अगला", back: "पीछे", start: "शुरू करें", 
-        selectLang: "अपनी भाषा चुनें", 
-        question: "आज हम आपकी कैसे सहायता कर सकते हैं?",
-        opt1: "सरल सारांश", opt1Desc: "20 पृष्ठों को 1 आसान पृष्ठ में बदलें।",
-        opt2: "वॉइस असिस्टेंट", opt2Desc: "दस्तावेज़ का ऑडियो सुनें।",
-        opt3: "विजुअल स्टोरीबोर्ड", opt3Desc: "कार्यों के चरण-दर-चरण चित्र।",
-        opt4: "फॉर्म भरें", opt4Desc: "AI आपको सरकारी फॉर्म भरने में मदद करेगा।",
-        formListTitle: "भरने के लिए एक फॉर्म चुनें",
-        forms: ["आधार कार्ड आवेदन", "पैन कार्ड अनुरोध", "मतदाता पहचान पत्र पंजीकरण", "राशन कार्ड अपडेट", "आय प्रमाण पत्र"],
-        uploadTitle: "दस्तावेज़ अपलोड करें", uploadHint: "अपना सरकारी PDF यहाँ खींचें",
-        active: "डेस्कटॉप एक्सेसिबिलिटी: चालू",
-        processing: "AI आपके दस्तावेज़ का विश्लेषण कर रहा है..."
-    }
+    en: { next: "Next", back: "Back", start: "Get Started", selectLang: "Select Language", question: "How can we assist you?", opt1: "Summary", opt1Desc: "20 pages to 1.", opt2: "Voice", opt2Desc: "Listen to audio.", opt3: "Visual", opt3Desc: "Step-by-step images.", opt4: "Form Fill", opt4Desc: "AI helps you fill.", formListTitle: "Select Form", forms: ["Aadhar Card Application", "PAN Card Request", "Voter ID Registration", "Ration Card Update", "Income Certificate"], uploadTitle: "Upload Document", uploadHint: "Drag PDF here", active: "Desktop Ready", processing: "Analyzing...", referenceTitle: "Guide" },
+    ta: { next: "அடுத்து", back: "பின்னால்", start: "தொடங்க", selectLang: "மொழியைத் தேர்ந்தெடுக்கவும்", question: "நாங்கள் எப்படி உதவலாம்?", opt1: "சுருக்கம்", opt1Desc: "எளிய பக்கம்.", opt2: "குரல்", opt2Desc: "ஆடியோ கேளுங்கள்.", opt3: "காட்சி", opt3Desc: "படிப்படியான படங்கள்.", opt4: "படிவம்", opt4Desc: "AI உதவும்.", formListTitle: "படிவத்தைத் தேர்வு செய்க", forms: ["ஆதார் கார்டு விண்ணப்பம்", "பான் கார்டு கோரிக்கை", "வாக்காளர் அடையாள அட்டை", "ரேஷன் கார்டு புதுப்பிப்பு", "வருமான சான்றிதழ்"], uploadTitle: "பதிவேற்றவும்", uploadHint: "PDF இழுக்கவும்", active: "இயக்கத்தில் உள்ளது", processing: "பகுப்பாய்வு...", referenceTitle: "வழிகாட்டி" },
+    hi: { next: "अगला", back: "पीछे", start: "शुरू करें", selectLang: "भाषा चुनें", question: "हम कैसे मदद कर सकते हैं?", opt1: "सारांश", opt1Desc: "1 पृष्ठ में बदलें।", opt2: "वॉइस", opt2Desc: "ऑडियो सुनें।", opt3: "विजुअल", opt3Desc: "चित्र गाइड।", opt4: "फॉर्म", opt4Desc: "AI मदद करेगा।", formListTitle: "फॉर्म चुनें", forms: ["आधार कार्ड आवेदन", "पैन कार्ड अनुरोध", "मतदाता पहचान पत्र पंजीकरण", "राशन कार्ड अपडेट", "आय प्रमाण पत्र"], uploadTitle: "अपलोड करें", uploadHint: "PDF यहाँ लाएँ", active: "डेस्कटॉप सक्रिय", processing: "विश्लेषण...", referenceTitle: "गाइड" }
   };
 
   const t = translations[language];
 
+  // --- HEIGHT OPTIMIZED STYLES ---
   const mainWrapperStyle = {
-    minHeight: '100vh',
+    height: '100vh',
+    width: '100vw',
     background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    overflow: 'hidden', // Prevents body scroll
   };
 
   const glassCardStyle = {
-    background: 'rgba(255, 255, 255, 0.85)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: '30px',
-    padding: '40px',
+    background: 'rgba(255, 255, 255, 0.9)',
+    backdropFilter: 'blur(12px)',
+    borderRadius: '24px',
+    padding: '30px 50px', 
     boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-    width: '100%',
+    width: '90%',
     maxWidth: '1100px',
-    margin: 'auto'
+    margin: 'auto',
+    height: '80vh', // Fixed height to ensure it fits on one screen
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    overflow: 'hidden'
   };
 
   const Page1Landing = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '50px' }}>
-      <div style={{ flex: 1 }}>
-        <Tag color="blue" icon={<CheckCircleFilled />} style={{ marginBottom: '15px' }}>Trusted AI Assistant</Tag>
-        <Title style={{ fontSize: '64px', fontWeight: 800, lineHeight: 1.1 }}>BUREAUCRACY <span style={{ color: '#1890ff' }}>AI</span></Title>
-        <Text style={{ fontSize: '24px', color: '#434343', display: 'block', marginTop: '20px' }}>
-          We bridge the gap between complex legal documents and common citizens.
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '40px' }}>
+      <div style={{ flex: 1.2 }}>
+        <Tag color="blue" style={{ marginBottom: '10px' }}>Trusted AI</Tag>
+        <Title style={{ fontSize: '56px', fontWeight: 900, lineHeight: 1, margin: 0 }}>BUREAUCRACY <span style={{ color: '#1890ff' }}>AI</span></Title>
+        <Text style={{ fontSize: '20px', color: '#434343', display: 'block', marginTop: '15px' }}>
+          Bridging the gap between complex legal documents and common citizens.
         </Text>
       </div>
       <div style={{ flex: 1, textAlign: 'right' }}>
-        <img src="https://illustrations.popsy.co/blue/manager.svg" alt="Manager" style={{ width: '100%', maxWidth: '500px', height: 'auto', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' }} />
+        <img src="https://illustrations.popsy.co/blue/manager.svg" alt="Manager" style={{ width: '100%', maxHeight: '300px', objectFit: 'contain' }} />
       </div>
     </div>
   );
 
   const Page2Language = () => (
     <div style={{ textAlign: 'center' }}>
-      <Title level={2}>{t.selectLang}</Title>
-      <Radio.Group value={language} onChange={(e) => setLanguage(e.target.value)} size="large" style={{ marginTop: '30px' }}>
+      <Title level={3} style={{ marginBottom: '30px' }}>{t.selectLang}</Title>
+      <Radio.Group value={language} onChange={(e) => { setLanguage(e.target.value); setSelectedForm(null); }}>
         <Space size="large">
           {['en', 'ta', 'hi'].map(lang => (
-            <Radio.Button key={lang} value={lang} style={{ height: '100px', width: '200px', fontSize: '24px', lineHeight: '100px', borderRadius: '20px' }}>
+            <Radio.Button key={lang} value={lang} style={{ height: '80px', width: '160px', fontSize: '20px', lineHeight: '80px', borderRadius: '15px' }}>
               {lang === 'en' ? 'English' : lang === 'ta' ? 'தமிழ்' : 'हिन्दी'}
             </Radio.Button>
           ))}
@@ -113,19 +101,19 @@ const App = () => {
   );
 
   const Page3Options = () => (
-    <div>
-      <Title level={2} style={{ textAlign: 'center', marginBottom: '40px' }}>{t.question}</Title>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+    <div style={{ width: '100%' }}>
+      <Title level={3} style={{ textAlign: 'center', marginBottom: '30px' }}>{t.question}</Title>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
         {[
           { id: 'literacy', icon: <TranslationOutlined />, title: t.opt1, desc: t.opt1Desc, color: '#1890ff' },
           { id: 'blind', icon: <AudioOutlined />, title: t.opt2, desc: t.opt2Desc, color: '#52c41a' },
           { id: 'deaf', icon: <EyeInvisibleOutlined />, title: t.opt3, desc: t.opt3Desc, color: '#f5222d' },
           { id: 'fill', icon: <FormOutlined />, title: t.opt4, desc: t.opt4Desc, color: '#722ed1' }
         ].map(item => (
-          <Card key={item.id} hoverable onClick={() => setUserType(item.id)} style={{ borderRadius: '20px', border: userType === item.id ? `3px solid ${item.color}` : '1px solid #f0f0f0', background: userType === item.id ? `${item.color}05` : '#fff' }}>
-            <div style={{ fontSize: '40px', color: item.color }}>{item.icon}</div>
-            <Title level={4}>{item.title}</Title>
-            <Text type="secondary">{item.desc}</Text>
+          <Card key={item.id} hoverable onClick={() => setUserType(item.id)} size="small" style={{ borderRadius: '15px', textAlign: 'center', border: userType === item.id ? `2px solid ${item.color}` : '1px solid #f0f0f0' }}>
+            <div style={{ fontSize: '32px', color: item.color, marginBottom: '5px' }}>{item.icon}</div>
+            <Title level={5} style={{ margin: 0 }}>{item.title}</Title>
+            <Text type="secondary" style={{ fontSize: '12px' }}>{item.desc}</Text>
           </Card>
         ))}
       </div>
@@ -133,50 +121,40 @@ const App = () => {
   );
 
   const Page4Action = () => (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ height: '100%', overflow: 'hidden' }}>
       {userType === 'fill' ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <Title level={3}><FormOutlined /> {t.formListTitle}</Title>
-          <List bordered dataSource={t.forms} renderItem={item => (
-            <List.Item style={{ background: '#fff', marginBottom: '10px', borderRadius: '10px', cursor: 'pointer' }}>
-              <Space><FileTextOutlined style={{ color: '#1890ff' }} /> <Text strong>{item}</Text></Space>
-              <Button type="link">Fill Now</Button>
-            </List.Item>
-          )} style={{ marginTop: '20px', maxHeight: '300px', overflowY: 'auto' }} />
-        </motion.div>
+        <div style={{ display: 'flex', gap: '20px', height: '100%', maxHeight: '450px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '10px' }}>
+            <Title level={4}>{t.formListTitle}</Title>
+            <List bordered dataSource={t.forms} renderItem={item => (
+              <List.Item onClick={() => setSelectedForm(item)} style={{ cursor: 'pointer', padding: '8px', background: selectedForm === item ? '#e6f7ff' : '#fff', borderRadius: '8px', marginBottom: '5px' }}>
+                <Space><FileTextOutlined /> <Text strong>{item}</Text></Space>
+              </List.Item>
+            )} />
+          </div>
+          <div style={{ flex: 2, background: '#f9f9f9', padding: '15px', borderRadius: '15px', overflowY: 'auto' }}>
+            {selectedForm ? (
+              <div key={selectedForm}>
+                <Title level={5}>{t.referenceTitle}: {selectedForm}</Title>
+                <iframe width="100%" height="200" src={guideData[language]?.[selectedForm]?.vid} title="Guide" frameBorder="0"></iframe>
+                <img src={guideData[language]?.[selectedForm]?.img} alt="Sample" style={{ width: '100%', marginTop: '10px' }} />
+              </div>
+            ) : <div style={{ textAlign: 'center', marginTop: '100px' }}>Select form to view guide</div>}
+          </div>
+        </div>
       ) : (
-        <>
-          <Title level={2}>{t.uploadTitle}</Title>
-          <Upload.Dragger 
-            name="file"
-            multiple={false}
-            action={`http://localhost:5000/upload?lang=${language}`}
-            onChange={(info) => {
-              if (info.file.status === 'uploading') {
-                setLoading(true);
-              }
-              if (info.file.status === 'done') {
-                setLoading(false);
-                message.success(`${info.file.name} processed successfully.`);
-                setAiResult(info.file.response.result); // Save result from backend
-              } else if (info.file.status === 'error') {
-                setLoading(false);
-                message.error(`${info.file.name} processing failed.`);
-              }
-            }}
-            style={{ background: '#fff', borderRadius: '20px', padding: '40px' }}
-          >
-            <p className="ant-upload-drag-icon"><InboxOutlined style={{ fontSize: '64px', color: '#1890ff' }} /></p>
-            <Title level={4}>{t.uploadHint}</Title>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Upload.Dragger style={{ padding: '20px', background: '#fff' }} action={`http://localhost:5000/upload?lang=${language}`} onChange={(info) => { if (info.file.status === 'done') setAiResult(info.file.response.result); }}>
+            <p><InboxOutlined style={{ fontSize: '48px', color: '#1890ff' }} /></p>
+            <Title level={4}>{t.uploadTitle}</Title>
           </Upload.Dragger>
-
           {aiResult && (
-            <Card style={{ marginTop: '20px', textAlign: 'left', borderRadius: '15px', background: '#f9f9f9' }}>
-              <Title level={4}><RobotOutlined /> AI Summary:</Title>
-              <Text style={{ whiteSpace: 'pre-line' }}>{aiResult}</Text>
-            </Card>
+            <div style={{ marginTop: '15px', maxHeight: '200px', overflowY: 'auto', textAlign: 'left', padding: '15px', background: '#fff', borderRadius: '10px', border: '1px solid #eee' }}>
+              <Title level={5}>Result:</Title>
+              <Text>{aiResult}</Text>
+            </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -184,33 +162,35 @@ const App = () => {
   const pages = [<Page1Landing />, <Page2Language />, <Page3Options />, <Page4Action />];
 
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#1890ff', borderRadius: 15 } }}>
+    <ConfigProvider theme={{ token: { colorPrimary: '#1890ff', borderRadius: 10 } }}>
       <div style={mainWrapperStyle}>
-        <Header style={{ background: 'transparent', display: 'flex', justifyContent: 'space-between', padding: '20px 60px' }}>
+        <Header style={{ background: 'transparent', display: 'flex', justifyContent: 'space-between', padding: '10px 60px', height: '60px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <RobotOutlined style={{ fontSize: '32px', color: '#1890ff' }} />
-            <b style={{ fontSize: '24px', color: '#001529' }}>BUREAUCRACY AI</b>
+            <RobotOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+            <b style={{ fontSize: '18px' }}>BUREAUCRACY AI</b>
           </div>
           <Text strong style={{ color: '#1890ff' }}>{t.active}</Text>
         </Header>
 
-        <Content style={{ padding: '0 50px', display: 'flex', alignItems: 'center' }}>
-          <motion.div style={glassCardStyle}>
-            <AnimatePresence mode="wait">
-              <motion.div key={currentStep} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}>
-                {pages[currentStep]}
-              </motion.div>
-            </AnimatePresence>
+        <Content style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+          <div style={glassCardStyle}>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <AnimatePresence mode="wait">
+                <motion.div key={currentStep} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ height: '100%' }}>
+                  {pages[currentStep]}
+                </motion.div>
+              </AnimatePresence>
+            </div>
 
-            <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-between' }}>
-              <Button size="large" shape="round" icon={<ArrowLeftOutlined />} onClick={() => { setCurrentStep(prev => prev - 1); setAiResult(null); }} disabled={currentStep === 0} style={{ width: '180px', height: '50px' }}>
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: '15px' }}>
+              <Button size="large" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0}>
                 {t.back}
               </Button>
-              <Button size="large" type="primary" shape="round" onClick={() => setCurrentStep(prev => prev + 1)} disabled={currentStep === pages.length - 1 || loading} style={{ width: '180px', height: '50px' }}>
-                {loading ? "Processing..." : (currentStep === 0 ? "Get Started" : t.next)} <ArrowRightOutlined />
+              <Button size="large" type="primary" onClick={() => setCurrentStep(prev => prev + 1)} disabled={currentStep === pages.length - 1}>
+                {currentStep === 0 ? t.start : t.next} <ArrowRightOutlined />
               </Button>
             </div>
-          </motion.div>
+          </div>
         </Content>
       </div>
     </ConfigProvider>
