@@ -16,6 +16,8 @@ const App = () => {
   const [userType, setUserType] = useState(null);
   const [aiResult, setAiResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState(null);
+const [filePreview, setFilePreview] = useState(null);
   const [selectedForm, setSelectedForm] = useState(null);
 
   const guideData = {
@@ -120,44 +122,134 @@ const App = () => {
     </div>
   );
 
-  const Page4Action = () => (
-    <div style={{ height: '100%', overflow: 'hidden' }}>
-      {userType === 'fill' ? (
-        <div style={{ display: 'flex', gap: '20px', height: '100%', maxHeight: '450px' }}>
-          <div style={{ flex: 1, overflowY: 'auto', paddingRight: '10px' }}>
-            <Title level={4}>{t.formListTitle}</Title>
-            <List bordered dataSource={t.forms} renderItem={item => (
-              <List.Item onClick={() => setSelectedForm(item)} style={{ cursor: 'pointer', padding: '8px', background: selectedForm === item ? '#e6f7ff' : '#fff', borderRadius: '8px', marginBottom: '5px' }}>
+const Page4Action = () => (
+  <div style={{ height: '100%', overflow: 'hidden' }}>
+
+    {userType === 'fill' ? (
+      // -------- your existing FORM UI (unchanged) --------
+      <div style={{ display: 'flex', gap: '20px', height: '100%', maxHeight: '450px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '10px' }}>
+          <Title level={4}>{t.formListTitle}</Title>
+          <List
+            bordered
+            dataSource={t.forms}
+            renderItem={item => (
+              <List.Item
+                onClick={() => setSelectedForm(item)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '8px',
+                  background: selectedForm === item ? '#e6f7ff' : '#fff',
+                  borderRadius: '8px',
+                  marginBottom: '5px'
+                }}
+              >
                 <Space><FileTextOutlined /> <Text strong>{item}</Text></Space>
               </List.Item>
-            )} />
-          </div>
-          <div style={{ flex: 2, background: '#f9f9f9', padding: '15px', borderRadius: '15px', overflowY: 'auto' }}>
-            {selectedForm ? (
-              <div key={selectedForm}>
-                <Title level={5}>{t.referenceTitle}: {selectedForm}</Title>
-                <iframe width="100%" height="200" src={guideData[language]?.[selectedForm]?.vid} title="Guide" frameBorder="0"></iframe>
-                <img src={guideData[language]?.[selectedForm]?.img} alt="Sample" style={{ width: '100%', marginTop: '10px' }} />
-              </div>
-            ) : <div style={{ textAlign: 'center', marginTop: '100px' }}>Select form to view guide</div>}
-          </div>
+            )}
+          />
         </div>
-      ) : (
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <Upload.Dragger style={{ padding: '20px', background: '#fff' }} action={`http://localhost:5000/upload?lang=${language}`} onChange={(info) => { if (info.file.status === 'done') setAiResult(info.file.response.result); }}>
-            <p><InboxOutlined style={{ fontSize: '48px', color: '#1890ff' }} /></p>
-            <Title level={4}>{t.uploadTitle}</Title>
-          </Upload.Dragger>
-          {aiResult && (
-            <div style={{ marginTop: '15px', maxHeight: '200px', overflowY: 'auto', textAlign: 'left', padding: '15px', background: '#fff', borderRadius: '10px', border: '1px solid #eee' }}>
-              <Title level={5}>Result:</Title>
-              <Text>{aiResult}</Text>
+
+        <div style={{ flex: 2, background: '#f9f9f9', padding: '15px', borderRadius: '15px', overflowY: 'auto' }}>
+          {selectedForm ? (
+            <div key={selectedForm}>
+              <Title level={5}>{t.referenceTitle}: {selectedForm}</Title>
+              <iframe width="100%" height="200" src={guideData[language]?.[selectedForm]?.vid} />
+              <img src={guideData[language]?.[selectedForm]?.img} alt="Sample" style={{ width: '100%', marginTop: '10px' }} />
             </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '100px' }}>Select form to view guide</div>
           )}
         </div>
-      )}
-    </div>
-  );
+      </div>
+    ) : (
+
+      // -------- UPLOAD + PREVIEW UI --------
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+
+        <Upload.Dragger
+          style={{ padding: '20px', background: '#fff' }}
+          multiple={false}
+          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+
+          beforeUpload={(file) => {
+
+            message.success(`${file.name} selected`);
+
+            setFile(file);
+
+            const url = URL.createObjectURL(file);
+            setFilePreview(url);
+
+            return false;   // 🔥 STOP AUTO UPLOAD
+          }}
+
+          showUploadList={{
+            showRemoveIcon: true,
+            showPreviewIcon: false
+          }}
+
+          onRemove={() => {
+            setFile(null);
+            setFilePreview(null);
+          }}
+        >
+
+          <p><InboxOutlined style={{ fontSize: '48px', color: '#1890ff' }} /></p>
+          <Title level={4}>{t.uploadTitle}</Title>
+
+        </Upload.Dragger>
+
+
+        {/* -------- DOCUMENT PREVIEW -------- */}
+
+        {filePreview && (
+          <div
+            style={{
+              marginTop: '20px',
+              background: '#fff',
+              padding: '10px',
+              borderRadius: '12px',
+              border: '1px solid #eee'
+            }}
+          >
+            <Title level={5}>Preview</Title>
+
+            {/* PDF */}
+            {file?.type === "application/pdf" && (
+              <iframe
+                src={filePreview}
+                width="100%"
+                height="400px"
+                title="PDF Preview"
+                style={{ borderRadius: '10px' }}
+              />
+            )}
+
+            {/* IMAGE */}
+            {file?.type.startsWith("image/") && (
+              <img
+                src={filePreview}
+                alt="Preview"
+                style={{ width: '100%', borderRadius: '10px' }}
+              />
+            )}
+
+            {/* OTHER */}
+            {!file?.type.includes("pdf") &&
+             !file?.type.startsWith("image/") && (
+              <Text>Preview not available. File ready: {file.name}</Text>
+            )}
+          </div>
+        )}
+
+      </div>
+    )}
+
+  </div>
+);
+
+
 
   const pages = [<Page1Landing />, <Page2Language />, <Page3Options />, <Page4Action />];
 
